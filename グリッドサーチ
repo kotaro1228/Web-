@@ -1,0 +1,48 @@
+import numpy as np
+import pandas as pd
+from sklearn.datasets import load_breast_cancer
+
+dataset=load_breast_cancer()
+
+t=dataset.target
+x=dataset.data
+
+from sklearn.model_selection import train_test_split
+
+x_train_val,x_test,t_train_val,t_test=train_test_split(x,t,test_size=0.2,random_state=0)
+x_train,x_val,t_train,t_val=train_test_split(x_train_val,t_train_val,test_size=0.3,random_state=0)
+
+from sklearn.tree import DecisionTreeClassifier
+
+dtree=DecisionTreeClassifier(max_depth=10,min_samples_split=30,random_state=0)
+
+dtree.fit(x_train,t_train)
+
+print(f"train score:{dtree.score(x_train,t_train)}")
+print(f"val score:{dtree.score(x_val,t_val)}")
+print(f"test score:{dtree.score(x_test,t_test)}")
+
+from sklearn.model_selection import GridSearchCV
+estimator=DecisionTreeClassifier(random_state=0)
+
+param_grid=[{
+    "max_depth":[3,20,50],
+    "min_samples_split":[3,20,30]
+}]
+
+cv=5
+
+tuned_model=GridSearchCV(estimator=estimator,
+                         param_grid=param_grid,
+                         cv=cv,return_train_score=False)
+                         
+tuned_model.fit(x_train_val,t_train_val)
+
+pd.DataFrame(tuned_model.cv_results_).T
+
+tuned_model.best_params_
+
+best_model=tuned_model.best_estimator_
+
+print(best_model.score(x_train_val,t_train_val))
+print(best_model.score(x_test,t_test))
