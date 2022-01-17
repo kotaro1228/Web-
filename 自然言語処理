@@ -1,0 +1,140 @@
+!apt install aptitude
+!aptitude install mecab libmecab-dev mecab-ipadic-utf8 git make curl xz-utils file -y
+!pip install mecab-python3==0.7
+
+import MeCab
+from glob import glob
+
+txt = '''はじめまして、こちらはいまにゅチャンネルです。
+Pythonを使いこなして色んなことができるように、一緒に学んでいきましょう。
+本講義では特に自然言語処理について学びます。
+様々なライブラリを活用することで手軽に分析ができます。
+では早速進めていきましょう。'''
+
+with open("output.txt","x") as f:
+     f.write(txt)
+     
+filepaths=glob("*.txt")
+
+filepath=filepaths[0]
+
+with open(filepath,"r") as f:
+     txt=f.read()
+
+tagger=MeCab.Tagger()
+parsed_txt=tagger.parse(txt)
+elements=parsed_txt.split("\n")[:-2]
+
+results=[]
+
+for element in elements:
+    parts=element.split(",")
+    surface_pos,pos1,base=parts[0],parts[1],parts[-3]
+    surface,pos=surface_pos.split("\t")
+    results.append(dict(表層形=surface,基本形=base,品詞=pos,品詞1=pos1))
+    
+result=results[0]
+
+base_verbs=set()
+for result in results:
+    if result["品詞"]=="動詞":
+      base_verbs.add(result["表層形"])
+      
+from collections import defaultdict
+
+word_freq=defaultdict(int)
+
+for result in results:
+    if result["品詞"]!="記号":
+       word_freq[result["基本形"]]+=1
+       
+!pip install japanize_matplotlib
+
+import matplotlib.pyplot as plt
+import japanize_matplotlib
+
+%matplotlib inline
+
+sorted_word_freq=sorted(word_freq.items(),key=lambda x:x[1],reverse=True)
+
+keys=[_[0] for _ in sorted_word_freq]
+values=[_[1] for _ in sorted_word_freq]
+
+plt.figure(figsize=(8,4))
+plt.hist(values,bins=100)
+plt.xlim(0,5)
+plt.show()
+
+txt="Pythonを一緒に学びましょう。"
+
+for i in range(len(txt)-1):
+    print(txt[i:i+2])
+    
+tagger=MeCab.Tagger("-Owakati")
+tagger.parse(txt)
+
+words=tagger.parse(txt).split(" ")[:-1]
+
+for i in range(len(words)-1):
+    print("".join(words[i:i+2]))
+    
+n=3
+
+txt="Pythonを一緒に学びましょう。"
+words=tagger.parse(txt).split(" ")[:-1]
+
+def ngram(text,n):
+    return [text[i:i+n] for i in range(len(text)-n+1)]
+    
+ngram(words,3)
+
+FILE_ID = "0B7XkCwpI5KDYNlNUTTlSS21pQmM"
+FILE_NAME = "GoogleNews-vectors-negative300.bin.gz"
+!wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=$FILE_ID' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=$FILE_ID" -O $FILE_NAME && rm -rf /tmp/cookies.txt
+
+from gensim.models import KeyedVectors
+
+model = KeyedVectors.load_word2vec_format('/content/GoogleNews-vectors-negative300.bin.gz', binary=True)
+
+model["Japan"][:50]
+
+model.similarity("Japan","Japanese")
+
+ranks=model.most_similar("Japan",topn=40)
+ranks
+
+max_vocab=1000
+vocab=list(model.wv.vocab.keys())[:max_vocab]
+vectors = [model.wv[word] for word in vocab]
+
+from sklearn.cluster import KMeans
+
+n_clusters = 100
+kmeans_model = KMeans(n_clusters=n_clusters, verbose=1, random_state=42)
+kmeans_model.fit(vectors)
+
+cluster_labels = kmeans_model.labels_
+cluster_to_words = defaultdict(list)
+for cluster_id, word in zip(cluster_labels, vocab):
+    cluster_to_words[cluster_id].append(word)
+    
+for words in cluster_to_words.values():
+  print(words[:10])
+  
+kmeans_model.labels_
+
+cluster_to_words
+
+!pip install bhtsne
+
+import bhtsne
+import numpy as np
+
+embedded=bhtsne.tsne(np.array(vectors).astype(np.float64),dimensions=2,rand_seed=0)
+
+plt.figure(figsize=(20,20))
+plt.scatter(np.array(embedded).T[0],np.array(embedded).T[1])
+for(x,y),name in zip(embedded,vocab):
+   plt.annotate(name,(x,y))
+plt.show()
+
