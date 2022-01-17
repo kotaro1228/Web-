@@ -1,0 +1,63 @@
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.datasets import load_iris
+
+dataset=load_iris()
+
+x=dataset.data
+t=dataset.target
+
+feature_names=dataset.feature_names
+pd.DataFrame(x,columns=feature_names)
+
+from sklearn.decomposition import PCA
+
+pca=PCA(n_components=2,random_state=0)
+pca.fit(x)
+
+pca.get_covariance()
+
+x_transformed=pca.transform(x)
+pd.DataFrame(x_transformed,columns=["第一主成分","第二主成分"])
+
+pca.explained_variance_ratio_[0]
+pca.explained_variance_ratio_[1]
+
+from sklearn.preprocessing import StandardScaler
+
+scaler=StandardScaler()
+x_scaled=scaler.fit_transform(x)
+
+x_scaled_transformed = pca.fit_transform(x_scaled)
+
+pd.DataFrame(x_scaled_transformed,columns=["第一主成分","第二主成分"])
+
+sns.scatterplot(x_scaled_transformed[:,0],x_scaled_transformed[:,1],
+                hue=t,palette=sns.color_palette(n_colors=3))
+                
+df=pd.read_csv("convinience_store.csv")
+df.head()
+
+x=df.drop("No",axis=1).values
+
+from sklearn.cluster import KMeans
+
+kmeans=KMeans(n_clusters=3,random_state=0)
+kmeans.fit(x)
+
+kmeans.cluster_centers_.shape
+
+cluster=kmeans.predict(x)
+cluster
+
+df_cluster=df.copy()
+df_cluster["cluster"]=cluster
+
+df_cluster.head()
+
+df_results=pd.DataFrame()
+df_results
+
+df_cluster[df_cluster["cluster"]]
